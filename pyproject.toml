@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "booking-agent"
+version = "0.1.0"
+description = ""
+authors = ["Vincent <vincent.vanwy@gmail.com>"]
+readme = "README.md"
+packages = [{include = "booking_agent", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+black = "^24.10.0"
+pre-commit = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
