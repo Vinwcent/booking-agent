@@ -1,0 +1,5 @@
+Appointments can be scheduled between 9 AM and 4 PM on weekdays.
+Each appointment slot is 1 hour long.
+If a requested time slot is unavailable, the system should suggest the next
+available slot.
+Clients can book a maximum of two appointments per week.
