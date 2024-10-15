@@ -1,0 +1,22 @@
+{
+
+	  "customizations": {
+
+		      "codespaces": {
+
+			            "repositories": {
+
+					            "Vinwcent/dotfiles": {
+
+							              "permissions": "write-all"
+
+								              }
+
+									            }
+
+										        }
+
+											  }
+
+}
+
