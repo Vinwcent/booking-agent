@@ -9,4 +9,4 @@ class TestCalendar:
         with open("tests/test_files/calendar_test.json", "r") as f:
             json_calendar = json.load(f)
         calendar = Calendar(**json_calendar)
-        assert len(calendar.get_dates()) == 3
+        assert len(calendar.root) == 3

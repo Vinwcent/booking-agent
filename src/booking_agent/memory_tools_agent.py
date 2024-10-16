@@ -9,15 +9,6 @@ from langchain_core.tools import BaseTool
 
 
 class MemoryToolsAgent:
-    prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", "You are an assistant that helps people book appointments with their calendar"),
-                # Placeholder to provide memory to the agent
-                ("placeholder", "{chat_history}"),
-                ("human", "{input}"),
-                # Scratchpad for tools
-                ("placeholder", "{agent_scratchpad}")
-            ])
     _session_id: str
     _agent: RunnableWithMessageHistory
 
@@ -25,10 +16,11 @@ class MemoryToolsAgent:
     #  Public  #
     ############
 
-    def __init__(self, model: BaseLanguageModel, tools, session_id: str):
+    def __init__(self, model: BaseLanguageModel, tools, session_id: str,
+                 system_prompt: str = "You are an assistant that tries to answer questions"):
         # Session id is bound to the agent here
         self._session_id = session_id
-        self._initialize_agent(model, tools)
+        self._initialize_agent(model, tools, system_prompt)
 
 
     def invoke(self, msg: str):
@@ -44,9 +36,19 @@ class MemoryToolsAgent:
     #############
 
 
-    def _initialize_agent(self, model: BaseLanguageModel, tools: Sequence[BaseTool]):
-        memory = InMemoryChatMessageHistory(session_id=self._session_id)
-        base_agent = create_tool_calling_agent(model, tools, self.prompt)
+    def _initialize_agent(self, model: BaseLanguageModel, tools:
+                          Sequence[BaseTool], system_prompt: str):
+        memory = InMemoryChatMessageHistory(session_id=self._session_id) # type: ignore
+        prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", system_prompt),
+                    # Placeholder to provide memory to the agent
+                    ("placeholder", "{chat_history}"),
+                    ("human", "{input}"),
+                    # Scratchpad for tools
+                    ("placeholder", "{agent_scratchpad}")
+                ])
+        base_agent = create_tool_calling_agent(model, tools, prompt)
         executor = AgentExecutor(agent=base_agent, tools=tools)
         self._agent = RunnableWithMessageHistory(
             executor, # type: ignore

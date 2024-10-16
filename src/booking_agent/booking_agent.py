@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from langchain_core.language_models import BaseLanguageModel
@@ -5,6 +6,7 @@ from langchain_core.tools import StructuredTool
 from booking_agent.calendar_toolkit import CalendarToolkit
 from booking_agent.memory_tools_agent import MemoryToolsAgent
 
+logger = logging.getLogger("booking-agent")
 
 class BookingAgent(MemoryToolsAgent):
     _calendar_toolkit: CalendarToolkit
@@ -14,11 +16,20 @@ class BookingAgent(MemoryToolsAgent):
         super().__init__(model, [
             StructuredTool.from_function(self.get_today_date),
             StructuredTool.from_function(self._calendar_toolkit.is_time_slot_available),
-            StructuredTool.from_function(self._calendar_toolkit.book)
-        ], session_id)
+            StructuredTool.from_function(self._calendar_toolkit.book),
+            StructuredTool.from_function(self._calendar_toolkit.get_available_slots)
+        ], session_id, """You are a booking assistant that tries to help people
+        booking appointments in their calendar. If you can't find an available
+        slot or specific informations about a specific day, you take initiative
+        to provide direct concrete workaround for the user (propose new
+                         slots or dates). As a booking assistant you also
+                         understand that people are often considering today's
+                         date by default except when they specifically precised
+                         a date""")
 
     def get_today_date(self):
         """
         Get today's date
         """
+        logger.debug("Retrieving today's date")
         return date.today()
