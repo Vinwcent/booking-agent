@@ -154,7 +154,6 @@ class CalendarToolkit:
         running_duration = slots[0].get_duration_in_minutes()
         running_slots = [slots[0]]
         for index in range(1, len(slots)):
-            print(running_duration , duration_wanted_m)
             slot = slots[index]
             last_end = running_slots[-1].end
             if slot.start == last_end:
