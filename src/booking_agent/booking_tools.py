@@ -1,12 +1,12 @@
-from langchain.agents import tool
-from datetime import date
+from gradio.processing_utils import logging
+from datetime import date, datetime
 
+logger = logging.getLogger("booking-agent")
 
-
-
-@tool
 def get_today_date():
     """
     Get today's date
     """
-    return date.today()
+    logger.debug("Retrieving today's date")
+    day = datetime.now().strftime("%A")
+    return day + " " + str(date.today())

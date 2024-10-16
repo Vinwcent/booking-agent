@@ -1,59 +1,67 @@
 from collections.abc import Sequence
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableConfig, RunnableWithMessageHistory
+from langchain_core.prompts.chat import MessagesPlaceholder
+from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+
+from langchain_core.messages import HumanMessage, SystemMessage
 
 
 
 class MemoryToolsAgent:
-    _session_id: str
-    _agent: RunnableWithMessageHistory
+    _agent: Runnable
 
     ############
     #  Public  #
     ############
 
-    def __init__(self, model: BaseLanguageModel, tools, session_id: str,
+    def __init__(self, model: BaseChatModel, tools,
                  system_prompt: str = "You are an assistant that tries to answer questions"):
         # Session id is bound to the agent here
-        self._session_id = session_id
+        self._messages = []
+        self._tools = tools
         self._initialize_agent(model, tools, system_prompt)
 
 
     def invoke(self, msg: str):
-        result = self._agent.invoke({"input": msg},
-                                    RunnableConfig({"configurable":
-                                                    {"session_id":
-                                                     self._session_id}}))
-        return result["output"]
+        # We add the user input
+        self._messages.append(HumanMessage(content=msg))
+        # We get the ai answer and add it
+        ai_answer = self._agent.invoke({"messages": self._messages})
+        self._messages.append(ai_answer)
 
+        tools_map = {tool.func.__name__: tool for tool in self._tools}
+        # If it's not a classical stop, we are in a tool calling case
+        while ai_answer.response_metadata["finish_reason"] != "stop":
+            # We call each tool one after the other and store permanently their
+            # output
+            for tool_call in ai_answer.tool_calls:
+                selected_tool = tools_map[tool_call["name"].lower()]
+                tool_msg = selected_tool.invoke(tool_call)
+                self._messages.append(tool_msg)
+            ai_answer = self._agent.invoke({"messages": self._messages})
+            self._messages.append(ai_answer)
+        return ai_answer.content
 
     #############
     #  Private  #
     #############
 
 
-    def _initialize_agent(self, model: BaseLanguageModel, tools:
+    def _initialize_agent(self, model: BaseChatModel, tools:
                           Sequence[BaseTool], system_prompt: str):
-        memory = InMemoryChatMessageHistory(session_id=self._session_id) # type: ignore
+        # Here I don't use the "magic" RunnableWithMessageHistory because I want
+        # to keep ToolMessage persistent in memory. Indeed, since
+        # RunnableWithMessageHistory doesn't store ToolMessages between
+        # HumanMessages, the LLM was forgetting what "today" was meaning since
+        # it was found thanks to a tool (same for some dates and it was
+        # extremely annoying to see him forget between two inputs)
+        self._messages.append(SystemMessage(system_prompt))
         prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", system_prompt),
-                    # Placeholder to provide memory to the agent
-                    ("placeholder", "{chat_history}"),
-                    ("human", "{input}"),
-                    # Scratchpad for tools
-                    ("placeholder", "{agent_scratchpad}")
-                ])
-        base_agent = create_tool_calling_agent(model, tools, prompt)
-        executor = AgentExecutor(agent=base_agent, tools=tools)
-        self._agent = RunnableWithMessageHistory(
-            executor, # type: ignore
-                lambda _: memory,
-                input_messages_key="input",
-                history_messages_key="chat_history",
-                )
-
+            [
+                SystemMessage(content=system_prompt),
+                MessagesPlaceholder(variable_name="messages")
+            ]
+        )
+        self._agent = prompt | model.bind_tools(tools)
