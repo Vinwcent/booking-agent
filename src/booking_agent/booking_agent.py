@@ -26,3 +26,15 @@ class BookingAgent(MemoryToolsAgent):
                          date by default except when they specifically precised
                          a date. You know that when people speak about next
                          week, they speak about the week starting at the next Monday.""")
+
+    def reset_agent_and_calendar(self, calendar_toolkit: CalendarToolkit):
+        self._calendar_toolkit = calendar_toolkit
+        self._reset_memory_and_rebind_tools([
+            StructuredTool.from_function(get_today_date),
+            StructuredTool.from_function(self._calendar_toolkit.is_time_slot_available),
+            StructuredTool.from_function(self._calendar_toolkit.book),
+            StructuredTool.from_function(self._calendar_toolkit.get_available_slots)
+        ])
+
+    def get_calendar_json(self):
+        return self._calendar_toolkit.get_calendar_json()

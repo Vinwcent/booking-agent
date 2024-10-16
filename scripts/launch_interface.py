@@ -8,7 +8,9 @@ from booking_agent.booking_agent import BookingAgent
 from booking_agent.calendar import Calendar
 from booking_agent.calendar_toolkit import CalendarToolkit
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger("booking-agent")
+logger.setLevel(logging.DEBUG)
 
 def generate_calendar_html(calendar_dict):
     html = "<div class='calendar'>"
@@ -23,7 +25,8 @@ def generate_calendar_html(calendar_dict):
 
 def main():
     CSS = """#row1 {flex-grow: 1; align-items: unset;}
-        .form {height: fit-content;}"""
+        .form {height: fit-content;}
+        #interface {height: 800px;}"""
 
     with open("data/calendar.json", "r") as f:
         calendar_dict = json.load(f)
@@ -31,13 +34,27 @@ def main():
     model = ChatOpenAI()
     agent = BookingAgent(model, CalendarToolkit(Calendar(**calendar_dict)))
 
+
+
     with gr.Blocks(fill_height=True, css=CSS) as demo:
         with gr.Row(elem_id="row1"):
-            with gr.Column(scale=15):
-                gr.ChatInterface(lambda m, _: agent.invoke(m),
-                                 type="messages")
             with gr.Column():
-                gr.HTML(generate_calendar_html(calendar_dict))
+                gr.HTML(lambda:generate_calendar_html(agent.get_calendar_json()), every=2)
+            with gr.Column(scale=15, elem_id="interface"):
+                def invoke_and_update_calendar(m: str):
+                    result = agent.invoke(m)
+                    return result
+                interface = gr.ChatInterface(lambda m, _: invoke_and_update_calendar(m),
+                             type="messages")
+
+                def reset():
+                    logger.debug("Memory and calendar reset")
+                    # We could reset memory and rebind tools to reset but simply
+                    # recreating the object is simpler here
+                    agent.reset_agent_and_calendar(CalendarToolkit(Calendar(**calendar_dict)))
+
+                button = gr.ClearButton(interface.chatbot, value="Reset memory and calendar")
+                button.click(reset, [], [])
     demo.launch()
 
 

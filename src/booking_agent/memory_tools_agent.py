@@ -11,6 +11,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 class MemoryToolsAgent:
     _agent: Runnable
+    _model: BaseChatModel
 
     ############
     #  Public  #
@@ -21,7 +22,8 @@ class MemoryToolsAgent:
         # Session id is bound to the agent here
         self._messages = []
         self._tools = tools
-        self._initialize_agent(model, tools, system_prompt)
+        self._model = model
+        self._initialize_agent(tools, system_prompt)
 
 
     def invoke(self, msg: str):
@@ -44,12 +46,19 @@ class MemoryToolsAgent:
             self._messages.append(ai_answer)
         return ai_answer.content
 
+
     #############
     #  Private  #
     #############
 
+    def _reset_memory_and_rebind_tools(self, tools):
+        # We keep the system msg, this function is made for testing with gradio
+        self._messages = [self._messages[0]]
+        self._tools = tools
+        self._initialize_agent(tools, self._messages[0].content)
 
-    def _initialize_agent(self, model: BaseChatModel, tools:
+
+    def _initialize_agent(self, tools:
                           Sequence[BaseTool], system_prompt: str):
         # Here I don't use the "magic" RunnableWithMessageHistory because I want
         # to keep ToolMessage persistent in memory. Indeed, since
@@ -64,4 +73,4 @@ class MemoryToolsAgent:
                 MessagesPlaceholder(variable_name="messages")
             ]
         )
-        self._agent = prompt | model.bind_tools(tools)
+        self._agent = prompt | self._model.bind_tools(tools)
