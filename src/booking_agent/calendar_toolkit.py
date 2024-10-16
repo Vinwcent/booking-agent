@@ -26,6 +26,9 @@ class CalendarToolkit:
     #  Public  #
     ############
 
+    def get_calendar_json(self):
+        return self._calendar.model_dump()
+
     def book(self, date: str, start_time: str, duration: str):
         """
         Book on specified time slot with an appointment.
