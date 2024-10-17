@@ -4,6 +4,7 @@ This repository illustrates a proof of concept of an AI Agent which goal is to h
 
 ## Representation
 The calendar is a JSON file
+
 The booking policies are represented as a vector database
 
 ## Quick installation
