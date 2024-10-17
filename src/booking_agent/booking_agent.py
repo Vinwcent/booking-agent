@@ -38,15 +38,16 @@ class BookingAgent(MemoryToolsAgent):
         results = self._booking_policies_db.similarity_search(
             msg, k=2)
         booking_policies_str = "\n".join([result.page_content for result in results])
+        logger.debug(f"Policies retrieved\n{booking_policies_str}")
         prompt = f"""
 User msg: {msg}
 Relevant booking policies:
 {booking_policies_str}
 
-Please respond to the user's message while checking that you won't break one of
-the booking policy you received.
+Please respond to the user's message. You should only process request if they
+comply with booking policies, check if the user is not breaking one of them
+before processing
 """
-        print(f"Invoke with {prompt}")
         return super().invoke(prompt)
 
 
