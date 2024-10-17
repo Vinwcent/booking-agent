@@ -15,6 +15,11 @@ logger = logging.getLogger("booking-agent")
 logger.setLevel(logging.DEBUG)
 
 def generate_calendar_html(calendar_dict):
+    """
+    Ugly function to generate the gradio html
+
+    :param calendar_dict dict: The calendar used to create the html
+    """
     html = "<div class='calendar'>"
     for date, slots in calendar_dict.items():
         html += f"<div class='date'>{date}</div>"
@@ -26,6 +31,10 @@ def generate_calendar_html(calendar_dict):
     return html
 
 def main():
+    """
+    Launch a gradio interface that displays a chat interface with a booking
+    agent in it and its associated calendar on the left.
+    """
     CSS = """#row1 {flex-grow: 1; align-items: unset;}
         .form {height: fit-content;}
         #interface {height: 800px;}"""
@@ -54,8 +63,6 @@ def main():
 
                 def reset():
                     logger.debug("Memory and calendar reset")
-                    # We could reset memory and rebind tools to reset but simply
-                    # recreating the object is simpler here
                     agent.reset_agent_and_calendar(CalendarToolkit(Calendar(**calendar_dict)))
 
                 button = gr.ClearButton(interface.chatbot, value="Reset memory and calendar")

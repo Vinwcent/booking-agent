@@ -10,6 +10,14 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 
 class MemoryToolsAgent:
+    """
+    A generic agent with tools and memory that has the particularity of keeping
+    the tools outputs in its memory.
+
+    Attributes:
+        _agent: The agent
+        _model: The model that the agent is based on
+    """
     _agent: Runnable
     _model: BaseChatModel
 
@@ -27,6 +35,14 @@ class MemoryToolsAgent:
 
 
     def invoke(self, msg: str) -> str:
+        """
+        Calls the agent on the provided message and runs the tool
+        calling/response loop. This function stores everything in memory,
+        including tool calls (contrary to RunnableWithMessageHistory)
+
+        :param msg: The user input
+        :return: The final message of the llm (after the tool call loop)
+        """
         # We add the user input
         self._messages.append(HumanMessage(content=msg))
         # We get the ai answer and add it
@@ -63,9 +79,9 @@ class MemoryToolsAgent:
         # Here I don't use the "magic" RunnableWithMessageHistory because I want
         # to keep ToolMessage persistent in memory. Indeed, since
         # RunnableWithMessageHistory doesn't store ToolMessages between
-        # HumanMessages, the LLM was forgetting what "today" was meaning since
-        # it was found thanks to a tool (same for some dates and it was
-        # extremely annoying to see him forget between two inputs)
+        # calls, the LLM was forgetting what "today" was meaning since
+        # it was found thanks to a tool in a previous call (same for some dates) 
+        # and it was quite annoying to see him forget between two inputs
         self._messages.append(SystemMessage(system_prompt))
         prompt = ChatPromptTemplate.from_messages(
             [
