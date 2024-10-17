@@ -4,6 +4,11 @@ from langchain_community.vectorstores import FAISS
 from langchain_openai.embeddings import OpenAIEmbeddings
 
 def main():
+    """
+    A very basic script to create a FAISS vector database from a file.
+    Each line in the file will be embedded separately and the output vectorstore
+    will be saved at "data/policy_index"
+    """
     if len(sys.argv) != 2:
         print("You must specify the filepath\npython scripts/create_db.py policies_filepath")
         sys.exit(1)

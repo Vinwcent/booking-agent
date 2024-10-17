@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional, Tuple, cast
 
-from booking_agent.calendar import Calendar, TimeSlot, get_in_minutes, get_time_obj
+from booking_agent.calendar import Calendar, TimeSlot, get_in_minutes
 from booking_agent.exceptions import DateUnavailableError, TimeSlotUnavailableError
 
 
@@ -13,9 +13,9 @@ logger = logging.getLogger("booking-agent")
 class CalendarToolkit:
     """
     A class designed to abstract the concept of what is a calendar.
-    For simplicity we directly access the calendar object but in production,
-    this would be an abstract class and subclasses would implement specific
-    calendar tools (google calendar, apple calendar..)
+    For simplicity here, I directly access the calendar object but in production,
+    this would be an abstract class and a strategy design pattern could be
+    implemented to adapt to the client calendar (google calendar, apple calendar..)
     """
     _calendar: Calendar
 
@@ -27,6 +27,9 @@ class CalendarToolkit:
     ############
 
     def get_calendar_json(self):
+        """
+        Get the current loaded calendar in json format
+        """
         return self._calendar.model_dump()
 
     def book(self, date: str, start_time: str, duration: str):
@@ -123,7 +126,8 @@ class CalendarToolkit:
         # No slots available
         if len(filtered_slots) == 0:
             # We go out if we splitted too much (30 is half the minimum amount
-            # here, in reality this would be to define)
+            # here, in reality this would be to define according to the calendar
+            # type)
             if duration_in_minutes < 30:
                 return None
             half_minutes = duration_in_minutes / 2
@@ -175,6 +179,13 @@ class CalendarToolkit:
         return groups
 
     def _get_slots(self, date: str) -> List[TimeSlot]:
+        """
+        Get all the slots at a specified date in YYYY-m-d format
+
+        :param date: The date in YYYY-m-d format
+        :return: The list of time slots at this date
+        :raises DateUnavailableError: date not found in calendar
+        """
         calendar_dict = self._calendar.root
         if date not in calendar_dict.keys():
             raise DateUnavailableError
@@ -182,6 +193,12 @@ class CalendarToolkit:
 
 
     def _find_slot(self, date: str, start_time: str) -> TimeSlot:
+        """
+        Find the slot that begins at start_time on date
+
+        :return: The TimeSlot
+        :raises TimeSlotUnavailableError: time slot not found on this day
+        """
         slots = self._get_slots(date)
 
         for slot in slots:
@@ -190,11 +207,15 @@ class CalendarToolkit:
         raise TimeSlotUnavailableError
 
     def _is_duration_valid(self, slot: TimeSlot, duration: str) -> bool:
-        start_time_obj = get_time_obj(slot.start)
-        end_time_obj = get_time_obj(slot.end)
-        duration_obj = get_time_obj(duration)
+        """
+        Returns a boolean assessing if there's enough time in the given slot for
+        the provided duration
 
-        available_minutes = end_time_obj.hour * 60 + end_time_obj.minute - start_time_obj.hour * 60 - start_time_obj.minute
-        duration_minutes = duration_obj.hour * 60 + duration_obj.minute
+        :param slot: The slot to check
+        :param duration: The duration is H:M format
+        """
+        duration_minutes = get_in_minutes(duration)
+        available_minutes = slot.get_duration_in_minutes()
+
         return available_minutes >= duration_minutes
 

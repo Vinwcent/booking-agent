@@ -10,6 +10,14 @@ from langchain.vectorstores import VectorStore
 logger = logging.getLogger("booking-agent")
 
 class BookingAgent(MemoryToolsAgent):
+    """
+    A booking agent that extend a memory tools agent by checking booking
+    policies before processing user inputs
+
+    Attributes:
+        _calendar_toolkit: The class from which calendar related tools will be taken
+        _booking_policies_db: The vectorstore where booking policies are
+    """
     _calendar_toolkit: CalendarToolkit
     _booking_policies_db: VectorStore
 
@@ -52,6 +60,12 @@ before processing
 
 
     def reset_agent_and_calendar(self, calendar_toolkit: CalendarToolkit):
+        """
+        Resets the agent memory, the calendar and rebind the tools (else
+        the agent would remain bound to the previous calendar toolkit)
+
+        :param calendar_toolkit: The new calendar toolkit to use
+        """
         self._calendar_toolkit = calendar_toolkit
         self._reset_memory_and_rebind_tools([
             StructuredTool.from_function(get_today_date),
@@ -61,4 +75,7 @@ before processing
         ])
 
     def get_calendar_json(self):
+        """
+        Get the current calendar in json format
+        """
         return self._calendar_toolkit.get_calendar_json()
