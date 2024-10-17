@@ -44,6 +44,8 @@ class CalendarToolkit:
             slot = self._find_slot(date, start_time)
         except DateUnavailableError:
             return date_error_msg
+        except TimeSlotUnavailableError:
+            return f"The calendar doesn't provide information about the slot you asked on {date}"
         slot.available = False
         return f"Booked at {start_time} on {date} with success"
 

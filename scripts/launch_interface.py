@@ -2,7 +2,9 @@ import logging
 import json
 import gradio as gr
 
+from langchain_community.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
+from langchain_openai.embeddings import OpenAIEmbeddings
 
 from booking_agent.booking_agent import BookingAgent
 from booking_agent.calendar import Calendar
@@ -32,7 +34,10 @@ def main():
         calendar_dict = json.load(f)
 
     model = ChatOpenAI()
-    agent = BookingAgent(model, CalendarToolkit(Calendar(**calendar_dict)))
+    vectorstore = FAISS.load_local("data/policy_index",
+                                   embeddings=OpenAIEmbeddings(),
+                                   allow_dangerous_deserialization=True)
+    agent = BookingAgent(model, CalendarToolkit(Calendar(**calendar_dict)), vectorstore)
 
 
 
