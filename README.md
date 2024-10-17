@@ -1,4 +1,4 @@
-# 🔗 Booking agent 🔗
+# ℹ️🔗 Booking agent 🔗ℹ️
 
 This repository illustrates a proof of concept of an AI Agent which goal is to help users to book appointments in a calendar while following specific booking policies.
 
