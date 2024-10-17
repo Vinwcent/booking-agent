@@ -42,7 +42,7 @@ def main():
     with open("data/calendar.json", "r") as f:
         calendar_dict = json.load(f)
 
-    model = ChatOpenAI()
+    model = ChatOpenAI(model="gpt-4o")
     vectorstore = FAISS.load_local("data/policy_index",
                                    embeddings=OpenAIEmbeddings(),
                                    allow_dangerous_deserialization=True)
