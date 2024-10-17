@@ -26,7 +26,7 @@ class MemoryToolsAgent:
         self._initialize_agent(tools, system_prompt)
 
 
-    def invoke(self, msg: str):
+    def invoke(self, msg: str) -> str:
         # We add the user input
         self._messages.append(HumanMessage(content=msg))
         # We get the ai answer and add it
